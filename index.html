@@ -3,30 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#0a1122">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="JUO Trans">
-  <title>JUO MM-TH-EN Translator</title>
+  <meta name="apple-mobile-web-app-title" content="Juo Translator">
+  <title>Juo's personal translator</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3898/3898082.png">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3898/3898082.png">
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #091020;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-10 font-sans select-none">
+<body class="text-slate-100 min-h-screen pb-14 select-none">
 
-  <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-10 shadow-md">
-    <div class="max-w-md mx-auto flex items-center justify-between">
+  <!-- Header -->
+  <header class="bg-[#0f1930]/95 backdrop-blur border-b border-blue-900/50 p-4 sticky top-0 z-20 shadow-lg">
+    <div class="max-w-md mx-auto flex items-center justify-between gap-2">
       <div>
-        <h1 class="text-lg font-bold text-emerald-400">🇹🇭 MM ⇄ TH ⇄ EN Translator</h1>
-        <p class="text-xs text-slate-400">Polite Male Spoken Thai (ครับ / นะครับ)</p>
+        <h1 class="text-lg font-extrabold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+          Juo's personal translator
+        </h1>
+        <p class="text-[11px] text-blue-300/70">Polite Male Spoken Thai (ครับ / นะครับ)</p>
       </div>
-      <div class="flex gap-2">
-        <button id="installAppBtn" onclick="installPWA()" class="hidden text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-bold">
+      <div class="flex gap-1.5 shrink-0">
+        <button id="installAppBtn" onclick="installPWA()" class="hidden text-xs bg-cyan-600 hover:bg-cyan-500 text-white px-2.5 py-1.5 rounded-lg font-bold shadow">
           📲 Install
         </button>
-        <button onclick="toggleApiBox()" class="text-xs bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-600">
+        <button onclick="toggleApiBox()" class="text-xs bg-[#172544] hover:bg-[#1e3058] text-cyan-300 px-3 py-1.5 rounded-lg border border-blue-800/60 transition">
           🔑 API Key
         </button>
       </div>
@@ -34,76 +50,161 @@
   </header>
 
   <main class="max-w-md mx-auto p-4 space-y-4">
-    <div id="apiBox" class="bg-slate-800 p-4 rounded-xl border border-amber-500/40 space-y-2 hidden">
-      <label class="block text-xs text-amber-300">Google Gemini API Key ထည့်ပါ</label>
+
+    <!-- API Key Setup Box -->
+    <div id="apiBox" class="bg-[#111c35] p-4 rounded-xl border border-cyan-500/40 space-y-2 hidden shadow-md">
+      <label class="block text-xs font-medium text-cyan-300">Google Gemini API Key ထည့်ပါ</label>
       <div class="flex gap-2">
-        <input id="apiKeyInput" type="password" placeholder="API Key ဒီမှာ Paste ချပါ" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
-        <button onclick="saveApiKey()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Save</button>
+        <input id="apiKeyInput" type="password" placeholder="API Key ဒီမှာ Paste ချပါ" 
+          class="w-full bg-[#091020] border border-blue-900/80 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-400">
+        <button onclick="saveApiKey()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold shrink-0">
+          Save
+        </button>
       </div>
     </div>
 
-    <div class="bg-slate-800 p-1.5 rounded-xl grid grid-cols-2 gap-1.5 border border-slate-700">
-      <button id="tonePolite" onclick="setTone('polite')" class="py-2 px-3 rounded-lg text-xs font-semibold bg-emerald-600 text-white">👔 ယဉ်ကျေး/လုပ်ငန်းခွင် (ครับ)</button>
-      <button id="toneFriendly" onclick="setTone('friendly')" class="py-2 px-3 rounded-lg text-xs font-semibold text-slate-300">😊 ရင်းနှီး/နေ့စဉ်သုံး (นะครับ)</button>
-    </div>
-
-    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3">
-      <div class="flex justify-between items-center">
-        <span class="text-xs text-slate-400">မြန်မာစာ သို့မဟုတ် ထိုင်းစာ ရိုက်ထည့်ပါ</span>
-        <button onclick="clearInput()" class="text-xs text-rose-400">အကုန်ဖျက်မည်</button>
-      </div>
-      <textarea id="inputText" rows="3" placeholder="ဥပမာ - နေကောင်းလားအကို..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-base text-white select-text"></textarea>
-
-      <div class="flex gap-1.5 overflow-x-auto pb-1 text-xs">
-        <button onclick="quickFill('ဟုတ်ကဲ့ နားလည်ပါပြီ၊ ကျေးဇူးတင်ပါတယ်')" class="bg-slate-700 px-2.5 py-1 rounded-full shrink-0">နားလည်ပါပြီ</button>
-        <button onclick="quickFill('ခဏလေး စောင့်ပေးပါနော်')" class="bg-slate-700 px-2.5 py-1 rounded-full shrink-0">ခဏစောင့်ပေးပါ</button>
-        <button onclick="quickFill('ဒါလေး တစ်ချက်လောက် စစ်ပေးပါဦး')" class="bg-slate-700 px-2.5 py-1 rounded-full shrink-0">ဒါလေးစစ်ပေးပါ</button>
-      </div>
-
-      <button id="translateBtn" onclick="translateText()" class="w-full bg-emerald-600 active:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg">
-        ✨ ဘာသာပြန်မည် (Translate)
+    <!-- Tone Selector -->
+    <div class="bg-[#111c35] p-1.5 rounded-xl grid grid-cols-2 gap-1.5 border border-blue-900/50">
+      <button id="tonePolite" onclick="setTone('polite')" 
+        class="py-2.5 px-3 rounded-lg text-xs font-bold bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow transition">
+        👔 ယဉ်ကျေး/လုပ်ငန်းခွင် (ครับ)
+      </button>
+      <button id="toneFriendly" onclick="setTone('friendly')" 
+        class="py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-300 hover:bg-[#182747] transition">
+        😊 ရင်းနှီး/နေ့စဉ်သုံး (นะครับ)
       </button>
     </div>
 
-    <div id="loading" class="hidden text-center py-4 text-emerald-400 text-sm animate-pulse">
-      ⚡ ဘာသာပြန်နေပါသည် (၃ စက္ကန့်ခန့် စောင့်ပေးပါ)...
-    </div>
-
-    <div id="resultContainer" class="space-y-3 hidden">
-      <div class="bg-slate-800 p-4 rounded-xl border border-emerald-500/40 space-y-2">
-        <div class="flex justify-between items-center">
-          <span class="text-xs font-bold text-emerald-400">🇹🇭 THAI (POLITE MALE - ครับ)</span>
-          <div class="flex gap-2">
-            <button onclick="speakThai('thaiOutput')" class="bg-slate-700 px-2.5 py-1 rounded-lg text-xs">🔊 အသံ</button>
-            <button onclick="copyText('thaiOutput', this)" class="bg-emerald-600 text-white px-3 py-1 rounded-lg text-xs font-bold">📋 Copy Thai</button>
-          </div>
+    <!-- Input Box -->
+    <div class="bg-[#111c35] p-4 rounded-xl border border-blue-900/50 space-y-3 shadow-md">
+      <div class="flex justify-between items-center">
+        <span class="text-xs font-medium text-blue-300/80">မြန်မာစာ သို့မဟုတ် ထိုင်းစာ ရိုက်ထည့်ပါ</span>
+        <div class="flex items-center gap-3">
+          <button id="voiceBtn" onclick="startVoiceInput()" class="text-xs bg-[#192a4d] hover:bg-[#223867] text-cyan-300 px-2.5 py-1 rounded-lg border border-blue-800/60 flex items-center gap-1 transition">
+            <span>🎙️</span> <span id="voiceBtnText">အသံဖြင့်ရိုက်ရန်</span>
+          </button>
+          <button onclick="clearInput()" class="text-xs text-rose-400 hover:underline">အကုန်ဖျက်မည်</button>
         </div>
-        <p id="thaiOutput" class="text-xl font-semibold text-white select-all"></p>
-        <p id="thaiPronunciation" class="text-xs text-amber-300 bg-slate-900 p-2 rounded-lg"></p>
       </div>
 
-      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
+      <textarea id="inputText" rows="3" placeholder="ဥပမာ - အကို benz နေကောင်းလား..." 
+        class="w-full bg-[#091020] border border-blue-900/70 rounded-xl p-3 text-base text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 select-text"></textarea>
+
+      <!-- Custom 3 Quick Phrases -->
+      <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
+        <button onclick="quickFill('နားလည်ပါပြီအကို')" class="bg-[#192a4d] hover:bg-blue-800/60 text-cyan-200 border border-blue-800/50 px-3 py-1.5 rounded-full shrink-0 transition">
+          နားလည်ပါပြီအကို
+        </button>
+        <button onclick="quickFill('ကျေးဇူးပါအကို')" class="bg-[#192a4d] hover:bg-blue-800/60 text-cyan-200 border border-blue-800/50 px-3 py-1.5 rounded-full shrink-0 transition">
+          ကျေးဇူးပါအကို
+        </button>
+        <button onclick="quickFill('ဟုတ်ကဲ့ပါအကို')" class="bg-[#192a4d] hover:bg-blue-800/60 text-cyan-200 border border-blue-800/50 px-3 py-1.5 rounded-full shrink-0 transition">
+          ဟုတ်ကဲ့ပါအကို
+        </button>
+      </div>
+
+      <button id="translateBtn" onclick="translateText()" 
+        class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 active:scale-[0.99] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-950/60 transition flex justify-center items-center gap-2">
+        <span>✨ ဘာသာပြန်မည် (Translate)</span>
+      </button>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loading" class="hidden text-center py-4 text-cyan-400 text-sm animate-pulse">
+      ⚡ ဘာသာပြန်နေပါသည် (ခဏစောင့်ပေးပါ)...
+    </div>
+
+    <!-- Output Cards -->
+    <div id="resultContainer" class="space-y-3 hidden">
+
+      <!-- Thai Card -->
+      <div class="bg-[#111c35] p-4 rounded-xl border border-cyan-500/40 space-y-2.5 shadow-md">
+        <div class="flex justify-between items-center flex-wrap gap-2">
+          <span class="text-xs font-bold text-cyan-400">🇹🇭 THAI (POLITE MALE - ครับ)</span>
+          <div class="flex gap-1.5 items-center">
+            <button id="favCurrentBtn" onclick="toggleCurrentFavorite()" class="bg-[#192a4d] hover:bg-[#223867] px-2.5 py-1 rounded-lg text-xs border border-blue-800/60" title="Favorite သိမ်းရန်">
+              ☆
+            </button>
+            <button onclick="speakThai('thaiOutput', 1.0)" class="bg-[#192a4d] hover:bg-[#223867] text-blue-200 px-2.5 py-1 rounded-lg text-xs border border-blue-800/60">
+              🔊 အသံ
+            </button>
+            <button onclick="speakThai('thaiOutput', 0.65)" class="bg-[#192a4d] hover:bg-[#223867] text-cyan-300 px-2.5 py-1 rounded-lg text-xs border border-blue-800/60">
+              🐢 အနှေး
+            </button>
+            <button onclick="copyText('thaiOutput', this)" class="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-3 py-1 rounded-lg text-xs font-bold shadow">
+              📋 Copy Thai
+            </button>
+          </div>
+        </div>
+        <p id="thaiOutput" class="text-xl font-semibold text-white leading-relaxed select-all"></p>
+        <p id="thaiPronunciation" class="text-xs text-cyan-300 bg-[#091020] p-2.5 rounded-lg border border-blue-950"></p>
+      </div>
+
+      <!-- Myanmar Card -->
+      <div class="bg-[#111c35] p-4 rounded-xl border border-blue-900/50 space-y-2 shadow-md">
         <div class="flex justify-between items-center">
           <span class="text-xs font-bold text-sky-400">🇲🇲 MYANMAR (ဆိုလိုရင်း အဓိပ္ပာယ်)</span>
-          <button onclick="copyText('mmOutput', this)" class="bg-slate-700 text-slate-200 px-3 py-1 rounded-lg text-xs">📋 Copy MM</button>
+          <button onclick="copyText('mmOutput', this)" class="bg-[#192a4d] hover:bg-[#223867] text-slate-200 px-3 py-1 rounded-lg text-xs border border-blue-800/60">
+            📋 Copy MM
+          </button>
         </div>
         <p id="mmOutput" class="text-base text-slate-100 select-all"></p>
       </div>
 
-      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
+      <!-- English Card -->
+      <div class="bg-[#111c35] p-4 rounded-xl border border-blue-900/50 space-y-2 shadow-md">
         <div class="flex justify-between items-center">
           <span class="text-xs font-bold text-indigo-400">🇬🇧 ENGLISH TRANSLATION</span>
-          <button onclick="copyText('enOutput', this)" class="bg-slate-700 text-slate-200 px-3 py-1 rounded-lg text-xs">📋 Copy EN</button>
+          <button onclick="copyText('enOutput', this)" class="bg-[#192a4d] hover:bg-[#223867] text-slate-200 px-3 py-1 rounded-lg text-xs border border-blue-800/60">
+            📋 Copy EN
+          </button>
         </div>
         <p id="enOutput" class="text-base text-slate-100 select-all"></p>
       </div>
+
+      <!-- Suggested Thai Reply -->
+      <div id="replyCard" class="bg-[#111c35] p-4 rounded-xl border border-amber-500/40 space-y-2 hidden shadow-md">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold text-amber-400">💬 ပြန်ဖြေရန် ထိုင်းစာ အကြံပြုချက်</span>
+          <div class="flex gap-1.5">
+            <button onclick="speakThai('replyOutput', 1.0)" class="bg-[#192a4d] px-2.5 py-1 rounded-lg text-xs">🔊</button>
+            <button onclick="copyText('replyOutput', this)" class="bg-amber-600 text-white px-3 py-1 rounded-lg text-xs font-bold">📋 Copy Reply</button>
+          </div>
+        </div>
+        <p id="replyOutput" class="text-base font-medium text-white select-all"></p>
+        <p id="replyMeaning" class="text-xs text-slate-400"></p>
+      </div>
+
     </div>
+
+    <!-- History & Favorites Section -->
+    <div class="bg-[#111c35] p-4 rounded-xl border border-blue-900/50 space-y-3 shadow-md">
+      <div class="flex items-center justify-between border-b border-blue-900/50 pb-2">
+        <div class="flex gap-2">
+          <button id="tabRecent" onclick="switchHistoryTab('recent')" class="text-xs font-bold px-3 py-1 rounded-lg bg-blue-600 text-white">
+            🕘 မှတ်တမ်း (Recent)
+          </button>
+          <button id="tabFav" onclick="switchHistoryTab('fav')" class="text-xs font-semibold px-3 py-1 rounded-lg text-slate-400 hover:bg-[#192a4d]">
+            ⭐ သိမ်းထားသောစာများ
+          </button>
+        </div>
+        <button onclick="clearHistory()" class="text-[11px] text-rose-400/80 hover:underline">မှတ်တမ်းဖျက်ရန်</button>
+      </div>
+
+      <div id="historyList" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
   </main>
 
   <script>
     let currentTone = 'polite';
+    let historyTab = 'recent';
+    let lastTranslationItem = null;
     let deferredPrompt;
 
+    // PWA Install Prompt
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
@@ -131,6 +232,7 @@
       } else {
         document.getElementById('apiKeyInput').value = savedKey;
       }
+      renderHistory();
     };
 
     function toggleApiBox() {
@@ -148,11 +250,11 @@
     function setTone(tone) {
       currentTone = tone;
       document.getElementById('tonePolite').className = tone === 'polite'
-        ? 'py-2 px-3 rounded-lg text-xs font-semibold bg-emerald-600 text-white'
-        : 'py-2 px-3 rounded-lg text-xs font-semibold text-slate-300';
+        ? 'py-2.5 px-3 rounded-lg text-xs font-bold bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow transition'
+        : 'py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-300 hover:bg-[#182747] transition';
       document.getElementById('toneFriendly').className = tone === 'friendly'
-        ? 'py-2 px-3 rounded-lg text-xs font-semibold bg-emerald-600 text-white'
-        : 'py-2 px-3 rounded-lg text-xs font-semibold text-slate-300';
+        ? 'py-2.5 px-3 rounded-lg text-xs font-bold bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow transition'
+        : 'py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-300 hover:bg-[#182747] transition';
     }
 
     function quickFill(text) {
@@ -162,6 +264,35 @@
     function clearInput() {
       document.getElementById('inputText').value = '';
       document.getElementById('resultContainer').classList.add('hidden');
+    }
+
+    // Voice Input (Speech Recognition)
+    function startVoiceInput() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        return alert('သင့် Browser တွင် အသံဖြင့်စာရိုက်စနစ် မပံ့ပိုးပါ');
+      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'my-MM';
+      recognition.interimResults = false;
+
+      const voiceBtnText = document.getElementById('voiceBtnText');
+      voiceBtnText.innerText = 'နားထောင်နေသည်...';
+
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('inputText').value = transcript;
+      };
+
+      recognition.onerror = function() {
+        voiceBtnText.innerText = 'အသံဖြင့်ရိုက်ရန်';
+      };
+
+      recognition.onend = function() {
+        voiceBtnText.innerText = 'အသံဖြင့်ရိုက်ရန်';
+      };
+
+      recognition.start();
     }
 
     async function translateText() {
@@ -182,8 +313,11 @@
       resultContainer.classList.add('hidden');
       btn.disabled = true;
 
-      const toneDesc = currentTone === 'polite' ? 'polite male workplace Thai (ครับ)' : 'friendly casual male Thai (ครับ/นะครับ)';
-      const prompt = `Translate "${text}" into ${toneDesc}, Myanmar, and English. Return ONLY JSON: {"thai_text":"...","thai_pronunciation_mm":"...","myanmar_text":"...","english_text":"..."}`;
+      const toneDesc = currentTone === 'polite'
+        ? 'polite male spoken Thai (workplace/respectful, ending with ครับ)'
+        : 'friendly natural male spoken Thai (casual/daily, ending with ครับ or นะครับ)';
+
+      const prompt = `Translate "${text}" accurately into ${toneDesc}, natural Myanmar, and natural English. If input is Thai, also provide a polite male Thai quick reply. Return ONLY JSON: {"detected_language":"MM" or "TH","thai_text":"...","thai_pronunciation_mm":"...","myanmar_text":"...","english_text":"...","suggested_thai_reply":"...","suggested_reply_mm":"..."}`;
 
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
@@ -199,10 +333,33 @@
         if (data.error) throw new Error(data.error.message);
 
         const result = JSON.parse(data.candidates[0].content.parts[0].text);
+
         document.getElementById('thaiOutput').innerText = result.thai_text || '';
         document.getElementById('thaiPronunciation').innerText = '🗣️ အသံထွက် - ' + (result.thai_pronunciation_mm || '');
         document.getElementById('mmOutput').innerText = result.myanmar_text || '';
         document.getElementById('enOutput').innerText = result.english_text || '';
+
+        const replyCard = document.getElementById('replyCard');
+        if (result.detected_language === 'TH' && result.suggested_thai_reply) {
+          document.getElementById('replyOutput').innerText = result.suggested_thai_reply;
+          document.getElementById('replyMeaning').innerText = '(' + (result.suggested_reply_mm || '') + ')';
+          replyCard.classList.remove('hidden');
+        } else {
+          replyCard.classList.add('hidden');
+        }
+
+        lastTranslationItem = {
+          id: Date.now(),
+          input: text,
+          thai: result.thai_text || '',
+          pronunciation: result.thai_pronunciation_mm || '',
+          mm: result.myanmar_text || '',
+          en: result.english_text || '',
+          fav: false
+        };
+
+        saveToHistory(lastTranslationItem);
+        updateCurrentFavButton();
         resultContainer.classList.remove('hidden');
       } catch (err) {
         alert('Error: ' + err.message);
@@ -212,27 +369,82 @@
       }
     }
 
-    function copyText(id, btn) {
-      const text = document.getElementById(id).innerText;
-      const temp = document.createElement('textarea');
-      temp.value = text;
-      document.body.appendChild(temp);
-      temp.select();
-      document.execCommand('copy');
-      document.body.removeChild(temp);
-      const old = btn.innerText;
-      btn.innerText = '✅ Copied!';
-      setTimeout(() => btn.innerText = old, 1500);
-    }
-
-    function speakThai(id) {
-      const text = document.getElementById(id).innerText;
-      if ('speechSynthesis' in window) {
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'th-TH';
-        window.speechSynthesis.speak(u);
+    // History & Favorites Management
+    function getHistory() {
+      try {
+        return JSON.parse(localStorage.getItem('juo_trans_history') || '[]');
+      } catch {
+        return [];
       }
     }
-  </script>
-</body>
-</html>
+
+    function saveToHistory(item) {
+      let list = getHistory();
+      const existingIndex = list.findIndex(x => x.input === item.input);
+      if (existingIndex !== -1) {
+        item.fav = list[existingIndex].fav;
+        list.splice(existingIndex, 1);
+      }
+      list.unshift(item);
+      if (list.length > 25) list = list.slice(0, 25);
+      localStorage.setItem('juo_trans_history', JSON.stringify(list));
+      renderHistory();
+    }
+
+    function toggleCurrentFavorite() {
+      if (!lastTranslationItem) return;
+      let list = getHistory();
+      const idx = list.findIndex(x => x.id === lastTranslationItem.id || x.input === lastTranslationItem.input);
+      if (idx !== -1) {
+        list[idx].fav = !list[idx].fav;
+        lastTranslationItem.fav = list[idx].fav;
+        localStorage.setItem('juo_trans_history', JSON.stringify(list));
+        updateCurrentFavButton();
+        renderHistory();
+      }
+    }
+
+    function updateCurrentFavButton() {
+      const btn = document.getElementById('favCurrentBtn');
+      if (lastTranslationItem && lastTranslationItem.fav) {
+        btn.innerText = '⭐';
+        btn.classList.add('text-amber-400');
+      } else {
+        btn.innerText = '☆';
+        btn.classList.remove('text-amber-400');
+      }
+    }
+
+    function toggleItemFav(id, event) {
+      event.stopPropagation();
+      let list = getHistory();
+      const idx = list.findIndex(x => x.id === id);
+      if (idx !== -1) {
+        list[idx].fav = !list[idx].fav;
+        if (lastTranslationItem && lastTranslationItem.id === id) {
+          lastTranslationItem.fav = list[idx].fav;
+          updateCurrentFavButton();
+        }
+        localStorage.setItem('juo_trans_history', JSON.stringify(list));
+        renderHistory();
+      }
+    }
+
+    function switchHistoryTab(tab) {
+      historyTab = tab;
+      document.getElementById('tabRecent').className = tab === 'recent'
+        ? 'text-xs font-bold px-3 py-1 rounded-lg bg-blue-600 text-white'
+        : 'text-xs font-semibold px-3 py-1 rounded-lg text-slate-400 hover:bg-[#192a4d]';
+      document.getElementById('tabFav').className = tab === 'fav'
+        ? 'text-xs font-bold px-3 py-1 rounded-lg bg-blue-600 text-white'
+        : 'text-xs font-semibold px-3 py-1 rounded-lg text-slate-400 hover:bg-[#192a4d]';
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const container = document.getElementById('historyList');
+      const list = getHistory();
+      const filtered = historyTab === 'fav' ? list.filter(x => x.fav) : list;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">${historyTab === 'fav' ? '⭐ သိမ်းထားသော 
