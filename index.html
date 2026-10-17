@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MM-TH-EN Polite Translator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-10 font-sans">
+
+  <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-10">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      <div>
+        <h1 class="text-lg font-bold text-emerald-400">🇹🇭 MM ⇄ TH ⇄ EN Translator</h1>
+        <p class="text-xs text-slate-400">Polite Male Spoken Thai (ครับ / นะครับ)</p>
+      </div>
+      <button onclick="toggleApiBox()" class="text-xs bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-600">🔑 API Key</button>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 space-y-4">
+    <div id="apiBox" class="bg-slate-800 p-4 rounded-xl border border-amber-500/40 space-y-2 hidden">
+      <label class="block text-xs text-amber-300">Google Gemini API Key ထည့်ပါ</label>
+      <div class="flex gap-2">
+        <input id="apiKeyInput" type="password" placeholder="API Key ဒီမှာ Paste ချပါ" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+        <button onclick="saveApiKey()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Save</button>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 p-1.5 rounded-xl grid grid-cols-2 gap-1.5 border border-slate-700">
+      <button id="tonePolite" onclick="setTone('polite')" class="py-2 px-3 rounded-lg text-xs font-semibold bg-emerald-600 text-white">👔 ယဉ်ကျေး/လုပ်ငန်းခွင် (ครับ)</button>
+      <button id="toneFriendly" onclick="setTone('friendly')" class="py-2 px-3 rounded-lg text-xs font-semibold text-slate-300">😊 ရင်းနှီး/နေ့စဉ်သုံး (นะครับ)</button>
+    </div>
+
+    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3">
+      <div class="flex justify-between items-center">
+        <span class="text-xs text-slate-400">မြန်မာစာ သို့မဟုတ် ထိုင်းစာ ရိုက်ထည့်ပါ</span>
+        <button onclick="clearInput()" class="text-xs text-rose-400">အကုန်ဖျက်မည်</button>
+      </div>
+      <textarea id="inputText" rows="3" placeholder="ဥပမာ - နေကောင်းလားအကို..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-base text-white"></textarea>
+
+      <div class="flex gap-1.5 overflow-x-auto pb-1 text-xs">
+        <button onclick="quickFill('ဟုတ်ကဲ့ နားလည်ပါပြီ၊ ကျေးဇူးတင်ပါတယ်')" class="bg-slate-700 px-2.5 py-1 rounded-full shrink-0">နားလည်ပါပြီ</button>
+        <button onclick="quickFill('ခဏလေး စောင့်ပေးပါနော်')" class="bg-slate-700 px-2.5 py-1 rounded-full shrink-0">ခဏစောင့်ပေးပါ</button>
+        <button onclick="quickFill('ဒါလေး တစ်ချက်လောက် စစ်ပေးပါဦး')" class="bg-slate-700 px-2.5 py-1 rounded-full shrink-0">ဒါလေးစစ်ပေးပါ</button>
+      </div>
+
+      <button id="translateBtn" onclick="translateText()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg">
+        ✨ ဘာသာပြန်မည် (Translate)
+      </button>
+    </div>
+
+    <div id="loading" class="hidden text-center py-4 text-emerald-400 text-sm animate-pulse">
+      ⚡ ဘာသာပြန်နေပါသည် (၃ စက္ကန့်ခန့် စောင့်ပေးပါ)...
+    </div>
+
+    <div id="resultContainer" class="space-y-3 hidden">
+      <div class="bg-slate-800 p-4 rounded-xl border border-emerald-500/40 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold text-emerald-400">🇹🇭 THAI (POLITE MALE - ครับ)</span>
+          <div class="flex gap-2">
+            <button onclick="speakThai('thaiOutput')" class="bg-slate-700 px-2.5 py-1 rounded-lg text-xs">🔊 အသံ</button>
+            <button onclick="copyText('thaiOutput', this)" class="bg-emerald-600 text-white px-3 py-1 rounded-lg text-xs font-bold">📋 Copy Thai</button>
+          </div>
+        </div>
+        <p id="thaiOutput" class="text-xl font-semibold text-white select-all"></p>
+        <p id="thaiPronunciation" class="text-xs text-amber-300 bg-slate-900 p-2 rounded-lg"></p>
+      </div>
+
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold text-sky-400">🇲🇲 MYANMAR (ဆိုလိုရင်း အဓိပ္ပာယ်)</span>
+          <button onclick="copyText('mmOutput', this)" class="bg-slate-700 text-slate-200 px-3 py-1 rounded-lg text-xs">📋 Copy MM</button>
+        </div>
+        <p id="mmOutput" class="text-base text-slate-100 select-all"></p>
+      </div>
+
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold text-indigo-400">🇬🇧 ENGLISH TRANSLATION</span>
+          <button onclick="copyText('enOutput', this)" class="bg-slate-700 text-slate-200 px-3 py-1 rounded-lg text-xs">📋 Copy EN</button>
+        </div>
+        <p id="enOutput" class="text-base text-slate-100 select-all"></p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let currentTone = 'polite';
+
+    window.onload = function() {
+      const savedKey = localStorage.getItem('gemini_api_key');
+      if (!savedKey) {
+        document.getElementById('apiBox').classList.remove('hidden');
+      } else {
+        document.getElementById('apiKeyInput').value = savedKey;
+      }
+    };
+
+    function toggleApiBox() {
+      document.getElementById('apiBox').classList.toggle('hidden');
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById('apiKeyInput').value.trim();
+      if (!key) return alert('API Key ထည့်ပေးပါ');
+      localStorage.setItem('gemini_api_key', key);
+      document.getElementById('apiBox').classList.add('hidden');
+      alert('API Key သိမ်းဆည်းပြီးပါပြီ!');
+    }
+
+    function setTone(tone) {
+      currentTone = tone;
+      document.getElementById('tonePolite').className = tone === 'polite'
+        ? 'py-2 px-3 rounded-lg text-xs font-semibold bg-emerald-600 text-white'
+        : 'py-2 px-3 rounded-lg text-xs font-semibold text-slate-300';
+      document.getElementById('toneFriendly').className = tone === 'friendly'
+        ? 'py-2 px-3 rounded-lg text-xs font-semibold bg-emerald-600 text-white'
+        : 'py-2 px-3 rounded-lg text-xs font-semibold text-slate-300';
+    }
+
+    function quickFill(text) {
+      document.getElementById('inputText').value = text;
+    }
+
+    function clearInput() {
+      document.getElementById('inputText').value = '';
+      document.getElementById('resultContainer').classList.add('hidden');
+    }
+
+    async function translateText() {
+      const apiKey = localStorage.getItem('gemini_api_key');
+      if (!apiKey) {
+        document.getElementById('apiBox').classList.remove('hidden');
+        return alert('API Key အရင်ထည့်ပေးပါ');
+      }
+
+      const text = document.getElementById('inputText').value.trim();
+      if (!text) return alert('စာသား ရိုက်ထည့်ပါ');
+
+      const loading = document.getElementById('loading');
+      const resultContainer = document.getElementById('resultContainer');
+      const btn = document.getElementById('translateBtn');
+
+      loading.classList.remove('hidden');
+      resultContainer.classList.add('hidden');
+      btn.disabled = true;
+
+      const toneDesc = currentTone === 'polite' ? 'polite male workplace Thai (ครับ)' : 'friendly casual male Thai (ครับ/นะครับ)';
+      const prompt = `Translate "${text}" into ${toneDesc}, Myanmar, and English. Return ONLY JSON: {"thai_text":"...","thai_pronunciation_mm":"...","myanmar_text":"...","english_text":"..."}`;
+
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: "application/json", temperature: 0.2 }
+          })
+        });
+
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+
+        const result = JSON.parse(data.candidates[0].content.parts[0].text);
+        document.getElementById('thaiOutput').innerText = result.thai_text || '';
+        document.getElementById('thaiPronunciation').innerText = '🗣️ အသံထွက် - ' + (result.thai_pronunciation_mm || '');
+        document.getElementById('mmOutput').innerText = result.myanmar_text || '';
+        document.getElementById('enOutput').innerText = result.english_text || '';
+        resultContainer.classList.remove('hidden');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        loading.classList.add('hidden');
+        btn.disabled = false;
+      }
+    }
+
+    function copyText(id, btn) {
+      const text = document.getElementById(id).innerText;
+      const temp = document.createElement('textarea');
+      temp.value = text;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand('copy');
+      document.body.removeChild(temp);
+      const old = btn.innerText;
+      btn.innerText = '✅ Copied!';
+      setTimeout(() => btn.innerText = old, 1500);
+    }
+
+    function speakThai(id) {
+      const text = document.getElementById(id).innerText;
+      if ('speechSynthesis' in window) {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'th-TH';
+        window.speechSynthesis.speak(u);
+      }
+    }
+  </script>
+</body>
+</html>
