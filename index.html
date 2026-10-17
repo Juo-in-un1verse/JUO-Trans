@@ -2,19 +2,34 @@
 <html lang="my">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MM-TH-EN Polite Translator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JUO Trans">
+  <title>JUO MM-TH-EN Translator</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3898/3898082.png">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3898/3898082.png">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-10 font-sans">
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-10 font-sans select-none">
 
-  <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-10">
+  <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-10 shadow-md">
     <div class="max-w-md mx-auto flex items-center justify-between">
       <div>
         <h1 class="text-lg font-bold text-emerald-400">🇹🇭 MM ⇄ TH ⇄ EN Translator</h1>
         <p class="text-xs text-slate-400">Polite Male Spoken Thai (ครับ / นะครับ)</p>
       </div>
-      <button onclick="toggleApiBox()" class="text-xs bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-600">🔑 API Key</button>
+      <div class="flex gap-2">
+        <button id="installAppBtn" onclick="installPWA()" class="hidden text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-bold">
+          📲 Install
+        </button>
+        <button onclick="toggleApiBox()" class="text-xs bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-600">
+          🔑 API Key
+        </button>
+      </div>
     </div>
   </header>
 
@@ -37,7 +52,7 @@
         <span class="text-xs text-slate-400">မြန်မာစာ သို့မဟုတ် ထိုင်းစာ ရိုက်ထည့်ပါ</span>
         <button onclick="clearInput()" class="text-xs text-rose-400">အကုန်ဖျက်မည်</button>
       </div>
-      <textarea id="inputText" rows="3" placeholder="ဥပမာ - နေကောင်းလားအကို..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-base text-white"></textarea>
+      <textarea id="inputText" rows="3" placeholder="ဥပမာ - နေကောင်းလားအကို..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-base text-white select-text"></textarea>
 
       <div class="flex gap-1.5 overflow-x-auto pb-1 text-xs">
         <button onclick="quickFill('ဟုတ်ကဲ့ နားလည်ပါပြီ၊ ကျေးဇူးတင်ပါတယ်')" class="bg-slate-700 px-2.5 py-1 rounded-full shrink-0">နားလည်ပါပြီ</button>
@@ -45,7 +60,7 @@
         <button onclick="quickFill('ဒါလေး တစ်ချက်လောက် စစ်ပေးပါဦး')" class="bg-slate-700 px-2.5 py-1 rounded-full shrink-0">ဒါလေးစစ်ပေးပါ</button>
       </div>
 
-      <button id="translateBtn" onclick="translateText()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg">
+      <button id="translateBtn" onclick="translateText()" class="w-full bg-emerald-600 active:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg">
         ✨ ဘာသာပြန်မည် (Translate)
       </button>
     </div>
@@ -87,6 +102,27 @@
 
   <script>
     let currentTone = 'polite';
+    let deferredPrompt;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('installAppBtn').classList.remove('hidden');
+    });
+
+    async function installPWA() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        document.getElementById('installAppBtn').classList.add('hidden');
+      }
+      deferredPrompt = null;
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
 
     window.onload = function() {
       const savedKey = localStorage.getItem('gemini_api_key');
