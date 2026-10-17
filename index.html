@@ -22,12 +22,11 @@
 
   <main class="max-w-md mx-auto p-4 space-y-4">
     <div id="apiBox" class="bg-[#111c35] p-4 rounded-xl border border-cyan-500/40 space-y-2 hidden">
-      <label class="block text-xs text-cyan-300">Gemini API Key ထည့်ပါ (Key အများကြီးထည့်လိုပါက ကော်မာ , ခံ၍ ထည့်နိုင်သည်)</label>
+      <label class="block text-xs text-cyan-300">Google Gemini API Key ထည့်ပါ</label>
       <div class="flex gap-2">
-        <input id="apiKeyInput" type="text" placeholder="Key1, Key2, Key3..." class="w-full bg-[#091020] border border-blue-900 rounded-lg px-3 py-2 text-sm text-white">
-        <button type="button" onclick="saveApiKey()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shrink-0">Save</button>
+        <input id="apiKeyInput" type="password" placeholder="API Key ဒီမှာ Paste ချပါ" class="w-full bg-[#091020] border border-blue-900 rounded-lg px-3 py-2 text-sm text-white">
+        <button type="button" onclick="saveApiKey()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Save</button>
       </div>
-      <p class="text-[11px] text-slate-400">Key တစ်ခု Quota ပြည့်သွားပါက နောက် Key တစ်ခုသို့ အလိုအလျောက် ပြောင်းသုံးပေးပါမည်။</p>
     </div>
 
     <div class="bg-[#111c35] p-1.5 rounded-xl grid grid-cols-2 gap-1.5 border border-blue-900/50">
@@ -58,7 +57,7 @@
     </div>
 
     <div id="loading" class="hidden text-center py-4 text-cyan-400 text-sm animate-pulse">
-      ⚡ ဘာသာပြန်နေပါသည် (ခဏစောင့်ပေးပါ)...
+      ⚡ ဘာသာပြန်နေပါသည် (၃ စက္ကန့်ခန့် စောင့်ပေးပါ)...
     </div>
 
     <div id="resultContainer" class="space-y-3 hidden">
@@ -129,5 +128,251 @@
       if (!key) return alert('API Key ထည့်ပေးပါ');
       localStorage.setItem('gemini_api_key', key);
       document.getElementById('apiBox').classList.add('hidden');
-      alert('API Key သိမ်း
-            
+      alert('API Key သိမ်းဆည်းပြီးပါပြီ!');
+    }
+
+    function setTone(tone) {
+      currentTone = tone;
+      var active = 'py-2.5 px-3 rounded-lg text-xs font-bold bg-gradient-to-r from-blue-600 to-cyan-600 text-white';
+      var inactive = 'py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-300';
+      document.getElementById('tonePolite').className = (tone === 'polite') ? active : inactive;
+      document.getElementById('toneFriendly').className = (tone === 'friendly') ? active : inactive;
+    }
+
+    function quickFill(text) {
+      document.getElementById('inputText').value = text;
+    }
+
+    function clearInput() {
+      document.getElementById('inputText').value = '';
+      document.getElementById('resultContainer').classList.add('hidden');
+    }
+
+    function startVoiceInput() {
+      var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return alert('သင့် Browser တွင် အသံဖြင့်စာရိုက်စနစ် မပံ့ပိုးပါ');
+      var rec = new SR();
+      rec.lang = 'my-MM';
+      document.getElementById('voiceBtnText').innerText = 'နားထောင်နေသည်...';
+      rec.onresult = function(e) {
+        document.getElementById('inputText').value = e.results[0][0].transcript;
+      };
+      rec.onend = function() {
+        document.getElementById('voiceBtnText').innerText = 'အသံဖြင့်ရိုက်ရန်';
+      };
+      rec.onerror = function() {
+        document.getElementById('voiceBtnText').innerText = 'အသံဖြင့်ရိုက်ရန်';
+      };
+      rec.start();
+    }
+
+    async function translateText() {
+      var apiKey = localStorage.getItem('gemini_api_key');
+      if (!apiKey) {
+        document.getElementById('apiBox').classList.remove('hidden');
+        return alert('API Key အရင်ထည့်ပေးပါ');
+      }
+      var text = document.getElementById('inputText').value.trim();
+      if (!text) return alert('စာသား ရိုက်ထည့်ပါ');
+
+      var loading = document.getElementById('loading');
+      var resultContainer = document.getElementById('resultContainer');
+      var btn = document.getElementById('translateBtn');
+
+      loading.classList.remove('hidden');
+      resultContainer.classList.add('hidden');
+      btn.disabled = true;
+
+      var toneDesc = (currentTone === 'polite') ? 'polite male workplace Thai (ครับ)' : 'friendly casual male Thai (ครับ/นะครับ)';
+      var prompt = 'Translate "' + text + '" into ' + toneDesc + ', Myanmar, and English. Return ONLY JSON: {"thai_text":"...","thai_pronunciation_mm":"...","myanmar_text":"...","english_text":"..."}';
+
+      try {
+        var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + apiKey, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: 'application/json', temperature: 0.2 }
+          })
+        });
+        var data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+
+        var result = JSON.parse(data.candidates[0].content.parts[0].text);
+        document.getElementById('thaiOutput').innerText = result.thai_text || '';
+        document.getElementById('thaiPronunciation').innerText = '🗣️ အသံထွက် - ' + (result.thai_pronunciation_mm || '');
+        document.getElementById('mmOutput').innerText = result.myanmar_text || '';
+        document.getElementById('enOutput').innerText = result.english_text || '';
+
+        lastItem = {
+          id: Date.now(),
+          input: text,
+          thai: result.thai_text || '',
+          pron: result.thai_pronunciation_mm || '',
+          mm: result.myanmar_text || '',
+          en: result.english_text || '',
+          fav: false
+        };
+        saveToHistory(lastItem);
+        updateFavBtn();
+        resultContainer.classList.remove('hidden');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        loading.classList.add('hidden');
+        btn.disabled = false;
+      }
+    }
+
+    function getHistory() {
+      try { return JSON.parse(localStorage.getItem('juo_history') || '[]'); } catch (e) { return []; }
+    }
+
+    function saveToHistory(item) {
+      var list = getHistory();
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].input === item.input) {
+          item.fav = list[i].fav;
+          list.splice(i, 1);
+          break;
+        }
+      }
+      list.unshift(item);
+      if (list.length > 20) list = list.slice(0, 20);
+      localStorage.setItem('juo_history', JSON.stringify(list));
+      renderHistory();
+    }
+
+    function toggleCurrentFavorite() {
+      if (!lastItem) return;
+      var list = getHistory();
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].id === lastItem.id || list[i].input === lastItem.input) {
+          list[i].fav = !list[i].fav;
+          lastItem.fav = list[i].fav;
+          break;
+        }
+      }
+      localStorage.setItem('juo_history', JSON.stringify(list));
+      updateFavBtn();
+      renderHistory();
+    }
+
+    function updateFavBtn() {
+      document.getElementById('favCurrentBtn').innerText = (lastItem && lastItem.fav) ? '⭐' : '☆';
+    }
+
+    function switchHistoryTab(tab) {
+      historyTab = tab;
+      document.getElementById('tabRecent').className = (tab === 'recent') ? 'text-xs font-bold px-3 py-1 rounded-lg bg-blue-600 text-white' : 'text-xs font-semibold px-3 py-1 rounded-lg text-slate-400';
+      document.getElementById('tabFav').className = (tab === 'fav') ? 'text-xs font-bold px-3 py-1 rounded-lg bg-blue-600 text-white' : 'text-xs font-semibold px-3 py-1 rounded-lg text-slate-400';
+      renderHistory();
+    }
+
+    function renderHistory() {
+      var box = document.getElementById('historyList');
+      var list = getHistory();
+      var items = [];
+      for (var i = 0; i < list.length; i++) {
+        if (historyTab !== 'fav' || list[i].fav) items.push(list[i]);
+      }
+      box.innerHTML = '';
+      if (items.length === 0) {
+        box.innerText = (historyTab === 'fav') ? '⭐ သိမ်းထားသော စာကြောင်း မရှိသေးပါ' : 'ဘာသာပြန်မှတ်တမ်း မရှိသေးပါ';
+        return;
+      }
+      items.forEach(function(item) {
+        var row = document.createElement('div');
+        row.className = 'bg-[#091020] p-2.5 rounded-xl border border-blue-900/40 flex justify-between items-center gap-2 cursor-pointer';
+        row.onclick = function() { loadItem(item.id); };
+
+        var textDiv = document.createElement('div');
+        textDiv.className = 'overflow-hidden';
+        var p1 = document.createElement('p');
+        p1.className = 'text-sm font-semibold text-cyan-300 truncate';
+        p1.innerText = item.thai;
+        var p2 = document.createElement('p');
+        p2.className = 'text-xs text-slate-400 truncate';
+        p2.innerText = item.mm;
+        textDiv.appendChild(p1);
+        textDiv.appendChild(p2);
+
+        var starBtn = document.createElement('button');
+        starBtn.className = 'text-sm px-2 py-1';
+        starBtn.innerText = item.fav ? '⭐' : '☆';
+        starBtn.onclick = function(e) {
+          e.stopPropagation();
+          toggleItemFav(item.id);
+        };
+
+        row.appendChild(textDiv);
+        row.appendChild(starBtn);
+        box.appendChild(row);
+      });
+    }
+
+    function toggleItemFav(id) {
+      var list = getHistory();
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].id === id) {
+          list[i].fav = !list[i].fav;
+          if (lastItem && lastItem.id === id) lastItem.fav = list[i].fav;
+          break;
+        }
+      }
+      localStorage.setItem('juo_history', JSON.stringify(list));
+      updateFavBtn();
+      renderHistory();
+    }
+
+    function loadItem(id) {
+      var list = getHistory();
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].id === id) {
+          lastItem = list[i];
+          document.getElementById('inputText').value = lastItem.input;
+          document.getElementById('thaiOutput').innerText = lastItem.thai;
+          document.getElementById('thaiPronunciation').innerText = '🗣️ အသံထွက် - ' + lastItem.pron;
+          document.getElementById('mmOutput').innerText = lastItem.mm;
+          document.getElementById('enOutput').innerText = lastItem.en;
+          updateFavBtn();
+          document.getElementById('resultContainer').classList.remove('hidden');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          break;
+        }
+      }
+    }
+
+    function clearHistory() {
+      var favs = getHistory().filter(function(x) { return x.fav; });
+      localStorage.setItem('juo_history', JSON.stringify(favs));
+      renderHistory();
+    }
+
+    function copyText(id, btn) {
+      var text = document.getElementById(id).innerText;
+      var temp = document.createElement('textarea');
+      temp.value = text;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand('copy');
+      document.body.removeChild(temp);
+      var old = btn.innerText;
+      btn.innerText = '✅ Copied!';
+      setTimeout(function() { btn.innerText = old; }, 1500);
+    }
+
+    function speakThai(id, rate) {
+      var text = document.getElementById(id).innerText;
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        var u = new SpeechSynthesisUtterance(text);
+        u.lang = 'th-TH';
+        u.rate = rate || 1.0;
+        window.speechSynthesis.speak(u);
+      }
+    }
+  </script>
+</body>
+</html>
+
